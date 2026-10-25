@@ -234,7 +234,7 @@ class Iap2UsbMuxHost private constructor(
             throw IphoneUsbException.Protocol("Invalid USBMUX TCP header length")
         }
         val destinationPort = readU16(frame, offset + 2)
-        if (length == tcpHeaderBytes && loggedControlFrames.incrementAndGet() <= LOGGED_RX_FRAMES) Log.i("xcertplay-usb", "usbmux TCP control destination=$destinationPort flags=${frame[13].toInt() and 0xff} ack=${readU32(frame, 8)} window=${readU16(frame, 14)}")
+        if (length == tcpHeaderBytes && (frame[13].toInt() and TCP_SYN_FIN_RST != 0 || loggedControlFrames.incrementAndGet() <= LOGGED_RX_FRAMES)) Log.i("xcertplay-usb", "usbmux TCP control destination=$destinationPort flags=${frame[13].toInt() and 0xff} ack=${readU32(frame, 8)} window=${readU16(frame, 14)}")
         val connection = synchronized(stateLock) { connections[destinationPort] } ?: return
         connection.onPacket(
             flags = frame[offset + 13].toInt() and 0xff,
@@ -282,6 +282,7 @@ class Iap2UsbMuxHost private constructor(
         private const val NANOS_PER_MILLISECOND = 1_000_000L
         private const val MUX_HEADER_BYTES = 16
         private const val TCP_HEADER_BYTES = 20
+        private const val TCP_SYN_FIN_RST = 0x07
         private const val TCP_WINDOW_FIELD = 512
         private const val FIRST_SOURCE_PORT = 1
         private const val HANDSHAKE_TIMEOUT_MILLIS = 60_000L
