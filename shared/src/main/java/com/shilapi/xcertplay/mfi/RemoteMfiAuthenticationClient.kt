@@ -41,6 +41,9 @@ class RemoteMfiAuthenticationClient(
         require(baseAddress.startsWith("http://") || baseAddress.startsWith("https://")) {
             "Remote MFI server address must use http:// or https://"
         }
+        require(baseAddress.startsWith("https://") || isPrivateNetworkHost(hostOf(baseAddress))) {
+            "Remote MFI server address must use https:// unless the host is on a private network"
+        }
         require(connectTimeoutMillis > 0) { "connectTimeoutMillis must be positive" }
         require(readTimeoutMillis > 0) { "readTimeoutMillis must be positive" }
         require(maximumAttempts > 0) { "maximumAttempts must be positive" }
@@ -275,6 +278,27 @@ class RemoteMfiAuthenticationClient(
             statusCode in 500..599
 
     companion object {
+        private val IPV4_LITERAL = Regex("\\d{1,3}(\\.\\d{1,3}){3}")
+
+        private fun hostOf(address: String): String? =
+            runCatching { URL(address).host }.getOrNull()?.lowercase()?.takeIf { it.isNotEmpty() }
+
+        /** Decides from the text alone. It never resolves a name, so a public DNS name is never trusted. */
+        internal fun isPrivateNetworkHost(host: String?): Boolean {
+            if (host == null) return false
+            val literal = host.startsWith("[") || IPV4_LITERAL.matches(host)
+            if (!literal) {
+                return host == "localhost" || '.' !in host || host.endsWith(".local")
+            }
+            val address = runCatching { java.net.InetAddress.getByName(host) }.getOrNull() ?: return false
+            val bytes = address.address
+            val carrierGradeNat = bytes.size == 4 &&
+                (bytes[0].toInt() and 0xff) == 100 && (bytes[1].toInt() and 0xc0) == 0x40
+            val uniqueLocalV6 = bytes.size == 16 && (bytes[0].toInt() and 0xfe) == 0xfc
+            return address.isLoopbackAddress || address.isSiteLocalAddress ||
+                address.isLinkLocalAddress || carrierGradeNat || uniqueLocalV6
+        }
+
         private const val CERTIFICATE_PATH = "/mfi/certificate"
         private const val SIGN_PATH = "/mfi/sign"
         private const val RESET_PATH = "/mfi/reset"
