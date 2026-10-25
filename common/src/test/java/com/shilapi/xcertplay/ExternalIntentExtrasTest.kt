@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.os.Looper
+import com.shilapi.xcertplay.orchestration.MfiTarget
 import com.shilapi.xcertplay.orchestration.WirelessHotspotMode
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -130,5 +131,46 @@ class ExternalIntentExtrasTest {
         val controller = open(Intent(app, DiPlayActivity::class.java))
         controller.newIntent(launch)
         assertTrue("the receiver's own launch no longer connects", startedCarPlay(controller.get()))
+    }
+
+    private fun receiverLaunch(): Intent {
+        val launches = mutableListOf<Intent>()
+        val context = object : ContextWrapper(app) {
+            override fun startActivity(intent: Intent) { launches += intent }
+        }
+        val device = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(phone)
+        PhoneBluetoothReceiver().onReceive(context,
+            Intent(BluetoothDevice.ACTION_ACL_CONNECTED).putExtra(BluetoothDevice.EXTRA_DEVICE, device))
+        return launches.single()
+    }
+
+    /** A cold start runs onCreate with the launch intent, the usual case for the real wake. */
+    private fun coldStart(intent: Intent): DiPlayActivity {
+        val controller = Robolectric.buildActivity(DiPlayActivity::class.java, intent)
+        controllers += controller
+        // Source-only test builds have no authentication assets; a remote target skips loading them.
+        AirPlayPersistence.saveMfiTarget(app, MfiTarget.REMOTE)
+        controller.create()
+        return controller.get()
+    }
+
+    @Test fun coldStartFromTheReceiverConnects() {
+        enableBluetoothWake()
+        val activity = coldStart(receiverLaunch())
+        assertTrue("the receiver's cold start no longer connects", startedCarPlay(activity))
+    }
+
+    @Test fun coldStartWithAnotherProcessesTokenDoesNotConnect() {
+        enableBluetoothWake()
+        val stale = receiverLaunch().putExtra(PhoneBluetoothReceiver.EXTRA_AUTO_CONNECT, "00000000-0000-0000-0000-000000000000")
+        assertFalse(startedCarPlay(coldStart(stale)))
+    }
+
+    @Test fun newIntentWithAnotherProcessesTokenDoesNotConnect() {
+        enableBluetoothWake()
+        val stale = receiverLaunch().putExtra(PhoneBluetoothReceiver.EXTRA_AUTO_CONNECT, "00000000-0000-0000-0000-000000000000")
+        val controller = open(Intent(app, DiPlayActivity::class.java))
+        controller.newIntent(stale)
+        assertFalse(startedCarPlay(controller.get()))
     }
 }
