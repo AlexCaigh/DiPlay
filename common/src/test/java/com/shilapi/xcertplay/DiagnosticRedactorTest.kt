@@ -177,4 +177,10 @@ class DiagnosticRedactorTest {
             assertFalse(folder.resolve("diplay.log").readText().contains("3745.1234"))
         } finally { folder.deleteRecursively() }
     }
+
+    @Test fun personalDataInControllerAndHotspotLinesIsAlreadyMasked() {
+        assertEquals("wireless RFCOMM connected address=[address]", DiagnosticRedactor.redact("wireless RFCOMM connected address=C0:A6:00:29:58:0A"))
+        assertNull(DiagnosticRedactor.redact("Manual hotspot SSID does not match the active local AP configuration: 'CarWifi-1234'"))
+        assertNull(DiagnosticRedactor.redact("WirelessHotspotInfo(backend=Wi-Fi P2P, ssid='DIRECT-xy-Car', passphrase=<redacted>, security=WPA2, channel=6)"))
+    }
 }
