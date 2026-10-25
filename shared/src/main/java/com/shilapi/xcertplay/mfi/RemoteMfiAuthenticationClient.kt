@@ -278,17 +278,23 @@ class RemoteMfiAuthenticationClient(
             statusCode in 500..599
 
     companion object {
-        private val IPV4_LITERAL = Regex("\\d{1,3}(\\.\\d{1,3}){3}")
+        private val IPV4_LITERAL = Regex("(0|[1-9]\\d{0,2})(\\.(0|[1-9]\\d{0,2})){3}")
 
         private fun hostOf(address: String): String? =
             runCatching { URL(address).host }.getOrNull()?.lowercase()?.takeIf { it.isNotEmpty() }
 
-        /** Decides from the text alone. It never resolves a name, so a public DNS name is never trusted. */
+        /**
+         * Decides from the text alone and never resolves a name. A single-label or .local name is trusted by its
+         * text, so a search domain or hosts entry can still point it at a public address.
+         * A dotted quad with a leading zero is not a literal: libc may read 010 as octal.
+         * A single label needs a letter and must not look like hex, so 134744072 and 0x08080808 are refused.
+         */
         internal fun isPrivateNetworkHost(host: String?): Boolean {
             if (host == null) return false
             val literal = host.startsWith("[") || IPV4_LITERAL.matches(host)
             if (!literal) {
-                return host == "localhost" || '.' !in host || host.endsWith(".local")
+                val singleLabel = '.' !in host && host.any { it.isLetter() } && !host.startsWith("0x")
+                return host == "localhost" || singleLabel || host.endsWith(".local")
             }
             val address = runCatching { java.net.InetAddress.getByName(host) }.getOrNull() ?: return false
             val bytes = address.address
