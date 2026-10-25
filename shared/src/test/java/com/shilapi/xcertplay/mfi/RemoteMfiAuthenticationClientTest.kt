@@ -173,6 +173,64 @@ class RemoteMfiAuthenticationClientTest {
         assertEquals(1, requests.get())
     }
 
+    @Test
+    fun rejectsCleartextHttpToPublicHosts() {
+        listOf(
+            "http://example.com",
+            "http://8.8.8.8:8080",
+            "http://172.32.0.1",
+            "http://192.168.1.1.example.com",
+            "http://192.168.1.1@example.com",
+            "http://[2001:db8::1]",
+        ).forEach { address ->
+            val error = assertThrows(address, IllegalArgumentException::class.java) {
+                RemoteMfiAuthenticationClient(address, token = "secret")
+            }
+            assertEquals(
+                "Remote MFI server address must use https:// unless the host is on a private network",
+                error.message,
+            )
+        }
+    }
+
+    @Test
+    fun allowsCleartextHttpOnPrivateAndLoopbackHosts() {
+        listOf(
+            "http://127.0.0.1:8080",
+            "http://localhost:8080",
+            "http://[::1]:8080",
+            "http://10.1.2.3",
+            "http://172.16.0.5",
+            "http://172.31.255.1",
+            "http://192.168.1.10:8000",
+            "http://169.254.10.20",
+            "http://100.64.0.1",
+            "http://[fd00::1]",
+            "http://[fe80::1]",
+            "http://mfi-pi",
+            "http://mfi-pi.local:8000",
+        ).forEach { address ->
+            RemoteMfiAuthenticationClient(address, token = "secret")
+        }
+    }
+
+    @Test
+    fun allowsHttpsToPublicHosts() {
+        RemoteMfiAuthenticationClient("https://mfi.example.com", token = "secret")
+        RemoteMfiAuthenticationClient("https://8.8.8.8")
+    }
+
+    @Test
+    fun sendsBearerTokenToLoopbackHttpServer() {
+        var authorization: String? = null
+        server.createContext("/mfi/reset") { exchange ->
+            authorization = exchange.requestHeaders.getFirst("Authorization")
+            exchange.respond(200, "{}")
+        }
+        RemoteMfiAuthenticationClient(serverAddress(), token = "test-token").reset()
+        assertEquals("Bearer test-token", authorization)
+    }
+
     private fun serverAddress(): String = "http://127.0.0.1:${server.address.port}"
 
     private fun HttpExchange.respond(statusCode: Int, body: String) {
