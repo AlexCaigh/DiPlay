@@ -175,6 +175,7 @@ class RemoteMfiAuthenticationClientTest {
 
     @Test
     fun rejectsCleartextHttpToPublicHosts() {
+        val wronglyAccepted = mutableListOf<String>()
         listOf(
             "http://example.com",
             "http://8.8.8.8:8080",
@@ -182,15 +183,27 @@ class RemoteMfiAuthenticationClientTest {
             "http://192.168.1.1.example.com",
             "http://192.168.1.1@example.com",
             "http://[2001:db8::1]",
+            "http://134744072",
+            "http://0x08080808",
+            "http://8",
+            "http://1.2.3",
+            "http://127.1",
+            "http://010.8.8.8",
+            "http://192.168.01.5",
+            "http://[::ffff:8.8.8.8]",
+            "http://localhost.evil.com",
+            "http://127.0.0.1.evil.com",
+            "http://evil.com#@192.168.1.5",
+            "http://localhost.",
         ).forEach { address ->
-            val error = assertThrows(address, IllegalArgumentException::class.java) {
-                RemoteMfiAuthenticationClient(address, token = "secret")
-            }
-            assertEquals(
-                "Remote MFI server address must use https:// unless the host is on a private network",
-                error.message,
-            )
+            val accepted = runCatching { RemoteMfiAuthenticationClient(address, token = "secret") }.isSuccess
+            if (accepted) wronglyAccepted += address
         }
+        assertEquals(
+            "cleartext http accepted for hosts that are not on a private network",
+            emptyList<String>(),
+            wronglyAccepted,
+        )
     }
 
     @Test
@@ -209,6 +222,7 @@ class RemoteMfiAuthenticationClientTest {
             "http://[fe80::1]",
             "http://mfi-pi",
             "http://mfi-pi.local:8000",
+            "http://[::ffff:192.168.1.5]",
         ).forEach { address ->
             RemoteMfiAuthenticationClient(address, token = "secret")
         }
@@ -229,6 +243,26 @@ class RemoteMfiAuthenticationClientTest {
         }
         RemoteMfiAuthenticationClient(serverAddress(), token = "test-token").reset()
         assertEquals("Bearer test-token", authorization)
+    }
+
+    @Test
+    fun doesNotFollowRedirects() {
+        val followed = AtomicInteger()
+        server.createContext("/mfi/reset") { exchange ->
+            exchange.responseHeaders.set("Location", "http://127.0.0.1:${server.address.port}/elsewhere")
+            exchange.sendResponseHeaders(302, -1)
+            exchange.close()
+        }
+        server.createContext("/elsewhere") { exchange ->
+            followed.incrementAndGet()
+            exchange.respond(200, "{}")
+        }
+
+        val error = assertThrows(RemoteMfiHttpException::class.java) {
+            RemoteMfiAuthenticationClient(serverAddress(), token = "secret").reset()
+        }
+        assertEquals(302, error.statusCode)
+        assertEquals(0, followed.get())
     }
 
     private fun serverAddress(): String = "http://127.0.0.1:${server.address.port}"
