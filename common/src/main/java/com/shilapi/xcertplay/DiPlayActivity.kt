@@ -6054,10 +6054,18 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
         }
     }
 
+    /** A selectable TextView cannot lay out a multi-megabyte report; the saved file keeps the full text. */
+    private fun reportTail(report: String): String {
+        if (report.length <= REPORT_VIEW_MAX_CHARS) return report
+        val cut = report.length - REPORT_VIEW_MAX_CHARS
+        val lineStart = report.indexOf('\n', cut - 1) + 1
+        return "…\n" + report.substring(if (lineStart > 0) lineStart else cut)
+    }
+
     private fun showDiagnosticReport(report: String) {
         val body = column().apply { setPadding(dp(24), dp(12), dp(24), dp(12)) }
         body.addView(label(getString(R.string.diagnostic_report_copy_hint), 14, MUTED))
-        body.addView(label(report, 13, TEXT).apply {
+        body.addView(label(reportTail(report), 13, TEXT).apply {
             typeface = Typeface.MONOSPACE
             setTextIsSelectable(true)
         })
@@ -6921,6 +6929,7 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
             ComponentName(BYD_SETTINGS_PACKAGE, "$BYD_SETTINGS_PACKAGE.system.mvp.view.link.hotspot.PerHospotActivity")
 
         private const val ADB_KEY_SAVE_WAIT_MILLIS = 500L
+        private const val REPORT_VIEW_MAX_CHARS = 200_000
         private const val APPEARANCE_POLL_MILLIS = 2_000L
         private const val APPEARANCE_BUTTON_TAG = "app_appearance_button"
         private const val SETTINGS_SEARCH_BUTTON_TAG = "settings_search_button"
