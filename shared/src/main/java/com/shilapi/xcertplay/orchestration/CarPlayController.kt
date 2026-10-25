@@ -347,6 +347,10 @@ class CarPlayController(
     }
 
     private val sessionListener = object : AirPlaySessionListener {
+        // Trace lines reach logcat and the UI; build them only for `setprop log.tag.DiPlayTrace VERBOSE` or a UI that wants them.
+        override val wantsTrace: Boolean
+            get() = uiListener?.wantsTrace == true || Log.isLoggable(TRACE_LOG_TAG, Log.VERBOSE)
+
         override fun onVideoFrameRendered(session: AirPlaySession) {
             if (!closed && !session.isClosed && activeSession === session) {
                 uiListener?.onVideoFrameRendered(session)
@@ -3191,6 +3195,7 @@ class CarPlayController(
 
     companion object {
         const val CONNECTION_DIAGNOSTIC_PREFIX = "CONNECTION_DIAGNOSTIC"
+        private const val TRACE_LOG_TAG = "DiPlayTrace"
         // Indices in the telephony HID report (AirPlayHid.telephonyDescriptor).
         private const val TELEPHONY_HOOK_SWITCH = 1
         private const val TELEPHONY_DROP = 3
