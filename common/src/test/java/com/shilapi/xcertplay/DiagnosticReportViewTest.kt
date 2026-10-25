@@ -67,4 +67,66 @@ class DiagnosticReportViewTest {
         val report = "DiPlay 1.0\n--- diplay.log ---\n12:00:00.000  CarPlay connected\n"
         assertEquals(report, showReport(report).first)
     }
+
+    private val max = 200_000
+
+    private fun tail(report: String): String {
+        val screen = activity ?: Robolectric.buildActivity(
+            DiPlayActivity::class.java,
+            Intent(RuntimeEnvironment.getApplication(), DiPlayActivity::class.java).putExtra("page", "settings"),
+        ).setup().get().also { activity = it }
+        return DiPlayActivity::class.java.getDeclaredMethod("reportTail", String::class.java)
+            .apply { isAccessible = true }.invoke(screen, report) as String
+    }
+
+    @Test fun reportOfExactlyTheLimitIsUnchangedAndOneMoreIsCut() {
+        val exact = "a".repeat(max)
+        assertEquals(exact, tail(exact))
+        assertEquals("…\n" + "a".repeat(max), tail("a".repeat(max + 1)))
+    }
+
+    @Test fun newlineJustBeforeTheCutStartsTheTailThere() {
+        val report = "x".repeat(max - 1) + "\n" + "y".repeat(max)
+        assertEquals("…\n" + "y".repeat(max), tail(report))
+    }
+
+    @Test fun newlineAtTheCutStartsTheTailAfterIt() {
+        val report = "x".repeat(max) + "\n" + "y".repeat(max - 1)
+        assertEquals("…\n" + "y".repeat(max - 1), tail(report))
+    }
+
+    @Test fun tailWithoutAnyNewlineIsCutAtTheLimit() {
+        val report = "x".repeat(50_000) + "y".repeat(max + 100)
+        assertEquals("…\n" + "y".repeat(max), tail(report))
+    }
+
+    @Test fun onlyTrailingNewlineStillShowsTheEndOfTheReport() {
+        val report = "a".repeat(399_999) + "\n"
+        val shown = tail(report)
+        assertEquals("…\n" + report.takeLast(max), shown)
+    }
+
+    @Test fun crlfReportStartsOnALineBoundary() {
+        val report = "12:00:00.000  line\r\n".repeat(30_000)
+        val body = tail(report).removePrefix("…\n")
+        assertTrue(report.endsWith(body))
+        assertTrue(body.startsWith("12:00:00.000"))
+        assertTrue(body.length <= max)
+        assertEquals('\n', report[report.length - body.length - 1])
+    }
+
+    @Test fun surrogatePairAcrossTheCutIsNotSplit() {
+        val report = "x".repeat(max - 1) + "\uD83D\uDE00" + "y".repeat(max - 1)
+        assertEquals("…\n" + "y".repeat(max - 1), tail(report))
+    }
+
+    @Test fun largeReportViewStartsAtALineBoundaryAndKeepsTheEnd() {
+        val report = maxSizeReport()
+        val shown = showReport(report).first
+        assertEquals(tail(report), shown)
+        assertTrue(shown.startsWith("…\n"))
+        val body = shown.removePrefix("…\n")
+        assertEquals('\n', report[report.length - body.length - 1])
+        assertTrue(shown.endsWith(report.takeLast(1_000)))
+    }
 }
