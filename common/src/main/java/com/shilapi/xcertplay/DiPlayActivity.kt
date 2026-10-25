@@ -6059,7 +6059,10 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
         if (report.length <= REPORT_VIEW_MAX_CHARS) return report
         val cut = report.length - REPORT_VIEW_MAX_CHARS
         val lineStart = report.indexOf('\n', cut - 1) + 1
-        return "…\n" + report.substring(if (lineStart > 0) lineStart else cut)
+        // A line start that leaves little text (a long final line) is worse than a mid-line cut.
+        val start = if (lineStart > 0 && report.length - lineStart >= REPORT_VIEW_MAX_CHARS / 2) lineStart
+        else if (Character.isLowSurrogate(report[cut])) cut + 1 else cut
+        return "…\n" + report.substring(start)
     }
 
     private fun showDiagnosticReport(report: String) {
