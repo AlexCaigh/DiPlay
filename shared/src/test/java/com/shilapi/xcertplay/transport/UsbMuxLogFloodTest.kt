@@ -56,6 +56,23 @@ class UsbMuxLogFloodTest {
         assertEquals(1, lines("usbmux TX"))
     }
 
+    @Test fun resetAndFinFramesAreLoggedAfterTheAckCapIsReached() {
+        UsbEvidenceReplay.transfers.add(versionReply)
+        repeat(60) { UsbEvidenceReplay.transfers.add(pureAck(it)) }
+        UsbEvidenceReplay.transfers.add(pureAck(60).also { it[29] = 0x04 })
+        UsbEvidenceReplay.transfers.add(pureAck(61).also { it[29] = 0x01 })
+        val host = Iap2UsbMuxHost.open(pipe())
+        awaitReads(63)
+        host.close()
+        val control = ShadowLog.getLogsForTag("xcertplay-usb").map { it.msg }
+            .filter { it.startsWith("usbmux TCP control") }
+        val acks = control.count { it.contains("flags=16 ") }
+        println("control lines=${control.size} acks=$acks rst=${control.count { it.contains("flags=4 ") }} fin=${control.count { it.contains("flags=1 ") }}")
+        assertTrue("pure ACK lines $acks exceed the cap", acks <= MAX_LINES)
+        assertEquals("RST line", 1, control.count { it.contains("flags=4 ") })
+        assertEquals("FIN line", 1, control.count { it.contains("flags=1 ") })
+    }
+
     private fun lines(prefix: String) =
         ShadowLog.getLogsForTag("xcertplay-usb").count { it.msg.startsWith(prefix) }
 
