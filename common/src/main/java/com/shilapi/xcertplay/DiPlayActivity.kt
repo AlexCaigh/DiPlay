@@ -6054,7 +6054,11 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
         }
     }
 
-    /** A selectable TextView cannot lay out a multi-megabyte report; the saved file keeps the full text. */
+    /**
+     * A selectable TextView cannot lay out a multi-megabyte report; the saved file keeps the full text.
+     * The view keeps the head (everything above the first log section: version, head unit, settings, snapshots)
+     * and the newest part, with a "…" line between them.
+     */
     private fun reportTail(report: String): String {
         if (report.length <= REPORT_VIEW_MAX_CHARS) return report
         val cut = report.length - REPORT_VIEW_MAX_CHARS
@@ -6062,7 +6066,21 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
         // A line start that leaves little text (a long final line) is worse than a mid-line cut.
         val start = if (lineStart > 0 && report.length - lineStart >= REPORT_VIEW_MAX_CHARS / 2) lineStart
         else if (Character.isLowSurrogate(report[cut])) cut + 1 else cut
-        return "…\n" + report.substring(start)
+        val head = reportHead(report)
+        if (head.length >= start) return report
+        return head + "…\n" + report.substring(start)
+    }
+
+    private fun reportHead(report: String): String {
+        val firstLog = SessionLogFile.REPORT_NAMES
+            .map { name -> "--- $name ---" }
+            .mapNotNull { marker ->
+                if (report.startsWith(marker)) 0 else report.indexOf("\n$marker").takeIf { it >= 0 }?.plus(1)
+            }
+            .minOrNull() ?: return ""
+        if (firstLog <= REPORT_HEAD_MAX_CHARS) return report.substring(0, firstLog)
+        val lineEnd = report.lastIndexOf('\n', REPORT_HEAD_MAX_CHARS - 1) + 1
+        return report.substring(0, if (lineEnd > 0) lineEnd else REPORT_HEAD_MAX_CHARS)
     }
 
     private fun showDiagnosticReport(report: String) {
@@ -6933,6 +6951,7 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
 
         private const val ADB_KEY_SAVE_WAIT_MILLIS = 500L
         private const val REPORT_VIEW_MAX_CHARS = 200_000
+        private const val REPORT_HEAD_MAX_CHARS = 20_000
         private const val APPEARANCE_POLL_MILLIS = 2_000L
         private const val APPEARANCE_BUTTON_TAG = "app_appearance_button"
         private const val SETTINGS_SEARCH_BUTTON_TAG = "settings_search_button"
