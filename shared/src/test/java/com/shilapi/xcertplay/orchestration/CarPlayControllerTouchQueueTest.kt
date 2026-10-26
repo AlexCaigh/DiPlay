@@ -8,6 +8,7 @@ import java.net.Socket
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -200,5 +201,19 @@ class CarPlayControllerTouchQueueTest {
     private companion object {
         const val MOVES = 500
         const val TAPS = 40
+    }
+
+    @Test fun movesAreRefusedWhenTheExecutorCannotRunThem() {
+        val rig = Rig(stall = false)
+        try {
+            assertTrue(rig.controller.sendTouch(listOf(finger(7, 0))))
+            rig.awaitWrites(1)
+            rig.controller.javaClass.getDeclaredField("touchExecutor").apply { isAccessible = true }
+                .get(rig.controller).let { (it as java.util.concurrent.ExecutorService).shutdownNow() }
+            assertFalse("first move reported as sent", rig.controller.sendTouch(listOf(finger(7, 1))))
+            assertFalse("later move merged into a move that never ran", rig.controller.sendTouch(listOf(finger(7, 2))))
+        } finally {
+            rig.close()
+        }
     }
 }
