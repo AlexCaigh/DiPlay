@@ -158,7 +158,15 @@ class DiagnosticReportViewTest {
     }
 
     @Test fun aHeaderThatTheTailAlreadyReachesIsNotRepeated() {
-        val report = headLines(10) + "--- diplay.log ---\n" + "12:00:01.000  filler\n".repeat(9_500)
-        assertEquals(1, Regex("header line 1\n").findAll(tail(report)).count())
+        // About 205,000 chars: the tail starts near 5,000, inside the 16,000-char header.
+        val report = headLines(1_000) + "--- diplay.log ---\n" + "12:00:01.000  filler\n".repeat(9_000)
+        assertTrue(report.length > max)
+        assertEquals(report, tail(report))
+    }
+
+    @Test fun aSurrogatePairAtTheHeaderCapIsNotSplit() {
+        val report = "x".repeat(19_999) + "\uD83D\uDE00" + "\n--- diplay.log ---\n" + "12:00:01.000  filler\n".repeat(30_000)
+        val head = tail(report).substringBefore("…\n")
+        assertTrue("head ends in a lone high surrogate", head.isEmpty() || !Character.isHighSurrogate(head.last()))
     }
 }
