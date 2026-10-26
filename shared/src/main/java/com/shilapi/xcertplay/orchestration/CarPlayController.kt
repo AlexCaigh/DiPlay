@@ -574,7 +574,6 @@ class CarPlayController(
                     touchExecutor.execute { session.sendTouch(contacts) }
                 } else {
                     val move = PendingMove(session, contacts)
-                    pendingMove = move
                     touchExecutor.execute {
                         val latest = synchronized(touchLock) {
                             if (pendingMove === move) pendingMove = null
@@ -582,6 +581,8 @@ class CarPlayController(
                         }
                         session.sendTouch(latest)
                     }
+                    // Set only after execute() accepted the task, and still under touchLock, which the task needs to start.
+                    pendingMove = move
                 }
             }
             true
