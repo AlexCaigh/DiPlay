@@ -6080,7 +6080,12 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
             .minOrNull() ?: return ""
         if (firstLog <= REPORT_HEAD_MAX_CHARS) return report.substring(0, firstLog)
         val lineEnd = report.lastIndexOf('\n', REPORT_HEAD_MAX_CHARS - 1) + 1
-        return report.substring(0, if (lineEnd > 0) lineEnd else REPORT_HEAD_MAX_CHARS)
+        val end = when {
+            lineEnd > 0 -> lineEnd
+            Character.isHighSurrogate(report[REPORT_HEAD_MAX_CHARS - 1]) -> REPORT_HEAD_MAX_CHARS - 1
+            else -> REPORT_HEAD_MAX_CHARS
+        }
+        return report.substring(0, end)
     }
 
     private fun showDiagnosticReport(report: String) {
