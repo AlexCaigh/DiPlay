@@ -124,9 +124,41 @@ class DiagnosticReportViewTest {
         val report = maxSizeReport()
         val shown = showReport(report).first
         assertEquals(tail(report), shown)
-        assertTrue(shown.startsWith("…\n"))
-        val body = shown.removePrefix("…\n")
+        assertTrue(shown.contains("\n…\n"))
+        val body = shown.substringAfter("\n…\n")
         assertEquals('\n', report[report.length - body.length - 1])
         assertTrue(shown.endsWith(report.takeLast(1_000)))
+    }
+
+    private fun headLines(count: Int) = (1 until count + 1).joinToString("") { "header line $it\n" }
+
+    @Test fun theHeaderAboveTheFirstLogIsKeptWhenTheMiddleIsCut() {
+        val header = headLines(100)
+        val firstLogLine = "12:00:00.000  first log line\n"
+        val report = header + "--- previous-7.log ---\n" + firstLogLine + "12:00:01.000  filler\n".repeat(30_000)
+        val shown = tail(report)
+        assertTrue(shown.startsWith(header + "…\n"))
+        assertTrue(!shown.contains(firstLogLine))
+        assertTrue(shown.endsWith(report.takeLast(1_000)))
+        assertTrue(shown.length <= max + 20_000 + 2)
+    }
+
+    @Test fun aHeaderOverTheCapIsCutAtALineBoundary() {
+        val report = headLines(5_000) + "--- diplay.log ---\n" + "12:00:01.000  filler\n".repeat(30_000)
+        val shown = tail(report)
+        val head = shown.substringBefore("…\n")
+        assertTrue("head is ${head.length} chars", head.length in 19_000..20_000)
+        assertTrue(head.endsWith("\n"))
+        assertTrue(report.startsWith(head))
+    }
+
+    @Test fun aLargeReportWithoutAMarkerKeepsOnlyTheTail() {
+        val report = headLines(100) + "12:00:01.000  filler\n".repeat(30_000)
+        assertTrue(tail(report).startsWith("…\n"))
+    }
+
+    @Test fun aHeaderThatTheTailAlreadyReachesIsNotRepeated() {
+        val report = headLines(10) + "--- diplay.log ---\n" + "12:00:01.000  filler\n".repeat(9_500)
+        assertEquals(1, Regex("header line 1\n").findAll(tail(report)).count())
     }
 }
