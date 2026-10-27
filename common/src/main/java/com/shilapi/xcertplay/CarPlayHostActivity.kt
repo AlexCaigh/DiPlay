@@ -5451,6 +5451,8 @@ open class CarPlayHostActivity : ComponentActivity() {
                 }
             }
 
+            override val wantsTrace: Boolean get() = false
+
             override fun onDebugLog(message: String) {
                 if (DiagnosticRedactor.redact(message) == null) return
                 if (message.startsWith(CarPlayController.CONNECTION_DIAGNOSTIC_PREFIX + " ")) {
