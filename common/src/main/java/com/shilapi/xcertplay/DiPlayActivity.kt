@@ -3141,7 +3141,7 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
             AirPlayPersistence.saveManualHotspotSsid(this, generated.ssid)
             AirPlayPersistence.saveManualHotspotPassphrase(this, generated.passphrase)
             AirPlayPersistence.saveManualHotspotSecurity(this, ManualHotspotSecurity.WPA2)
-            Log.i("DiPlay-Hotspot", "provisioned ${generated.ssid}")
+            Log.i("DiPlay-Hotspot", "provisioned a generated hotspot")
             return HotspotCredentials(generated.ssid, generated.passphrase,
                 ManualHotspotSecurity.WPA2, AirPlayPersistence.loadManualHotspotBand(this))
         }
