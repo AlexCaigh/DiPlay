@@ -1016,6 +1016,8 @@
     <string name="settings_launcher_bubble_hold_to_unlock">길게 눌러 잠금 해제</string>
     <string name="settings_hotspot_interface">핫스팟 인터페이스(선택 사항)</string>
     <string name="settings_hotspot_interface_description">일부 Geely, Lynk &amp; Co 및 기타 Qualcomm 장치의 eth0.3처럼 Android가 Wi-Fi 핫스팟으로 보고하지 않는 네트워크 인터페이스에서 핫스팟을 실행하는 헤드 유닛에만 사용합니다. 비워 두면 자동으로 찾습니다.</string>
+    <string name="settings_existing_wifi_interface">네트워크 인터페이스(선택 사항)</string>
+    <string name="settings_existing_wifi_interface_description">USB 네트워크 카드의 eth1처럼 Android가 Wi-Fi로 보고하지 않는 네트워크 인터페이스로 LAN에 연결하는 헤드 유닛에만 사용합니다. 비워 두면 자동으로 선택합니다.</string>
     <string name="cluster_projection_shape">대시보드 지도 모양</string>
     <string name="cluster_projection_shape_half">화면 절반</string>
     <string name="cluster_projection_shape_full">전체 화면</string>
