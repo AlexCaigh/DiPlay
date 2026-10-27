@@ -6802,10 +6802,7 @@ open class CarPlayHostActivity : ComponentActivity() {
         else -> getString(R.string.getting_carplay_ready)
     }
 
-    private fun appendLog(message: String) {
-        val safe = DiagnosticRedactor.redact(message) ?: return
-        sessionLog?.append(formattedLogLine(safe, System.currentTimeMillis()))
-    }
+    private fun appendLog(message: String) = appendFileLog(message)
 
     private fun appendFileLog(message: String) {
         sessionLog?.append(formattedLogLine(message, System.currentTimeMillis()))

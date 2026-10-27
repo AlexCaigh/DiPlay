@@ -87,6 +87,7 @@ class DiagnosticRedactorTest {
             log.append("password=secret")
             repeat(1600) { log.append("connection state " + "x".repeat(690)) }
             log.append("CarPlay connected")
+            assertTrue(log.awaitIdle(10_000))
             log.close()
             assertTrue(folder.resolve("diplay.log").length() <= SessionLogFile.MAX_BYTES + 701)
             assertTrue(folder.resolve("previous.log").length() <= SessionLogFile.MAX_BYTES + 701)
