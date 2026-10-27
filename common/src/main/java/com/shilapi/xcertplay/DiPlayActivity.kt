@@ -3535,8 +3535,9 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
                     pendingCarHotspotSetup = true
                     render()
                 } else if (candidate == WirelessHotspotMode.EXISTING_WIFI) {
-                    askHotspotCredentials(existingWifi = true) { ssid, password, _, _ ->
+                    askHotspotCredentials(existingWifi = true) { ssid, password, _, interfaceName ->
                         AirPlayPersistence.saveExistingWifiCredentials(this, ssid, password)
+                        AirPlayPersistence.saveExistingWifiInterface(this, interfaceName)
                         pendingCarHotspotSetup = false
                         applyWirelessLink(candidate)
                     }
@@ -3597,8 +3598,9 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
             parent.addView(label(getString(R.string.existing_wifi_instructions), 16, MUTED))
             parent.addView(button(getString(R.string.open_car_wi_fi_settings), false) { openCarClientWifiSettings() }, matchButton(12, 60))
             parent.addView(button(getString(R.string.existing_wifi_details), false) {
-                askHotspotCredentials(existingWifi = true) { ssid, password, _, _ ->
+                askHotspotCredentials(existingWifi = true) { ssid, password, _, interfaceName ->
                     AirPlayPersistence.saveExistingWifiCredentials(this, ssid, password)
+                    AirPlayPersistence.saveExistingWifiInterface(this, interfaceName)
                     toast(getString(R.string.saved_for_your_next_connection))
                 }
             }, matchButton(12, 60))
@@ -3809,19 +3811,27 @@ class DiPlayActivity : ComponentActivity(), AppAppearanceOwner {
             override fun afterTextChanged(s: android.text.Editable?) = updateNameWarning()
         })
         fields.addView(ssid); fields.addView(nameWarning); fields.addView(password)
-        // Some head units run their hotspot on an interface Android never reports as a tether, for
-        // example the eth0.3 VLAN on a QUALCOMM CS11 unit (#573). The override is optional: it is
-        // shown only for the car hotspot, and an empty value keeps the automatic choice.
-        val hotspotInterface = if (existingWifi) null else EditText(dialogContext).apply {
-            hint = getString(R.string.settings_hotspot_interface)
-            setText(storedInterface())
+        // Some head units keep the station LAN or their hotspot on an interface Android never
+        // reports as Wi-Fi, for example the eth0.3 VLAN on a QUALCOMM CS11 unit or a USB NIC on
+        // eth1 (#573 family). The override is optional: an empty value keeps the automatic choice.
+        val interfaceHint = if (existingWifi) R.string.settings_existing_wifi_interface else R.string.settings_hotspot_interface
+        val interfaceDescription = if (existingWifi) {
+            R.string.settings_existing_wifi_interface_description
+        } else {
+            R.string.settings_hotspot_interface_description
+        }
+        val hotspotInterface = EditText(dialogContext).apply {
+            hint = getString(interfaceHint)
+            setText(if (existingWifi) {
+                AirPlayPersistence.loadExistingWifiInterface(this@DiPlayActivity)
+            } else {
+                storedInterface()
+            })
             setSingleLine()
             inputType = android.text.InputType.TYPE_CLASS_TEXT
         }
-        if (hotspotInterface != null) {
-            fields.addView(hotspotInterface)
-            fields.addView(label(getString(R.string.settings_hotspot_interface_description), 14, MUTED))
-        }
+        fields.addView(hotspotInterface)
+        fields.addView(label(getString(interfaceDescription), 14, MUTED))
         fields.addView(CheckBox(dialogContext).apply {
             text = getString(R.string.show_password)
             setOnCheckedChangeListener { _, checked ->
