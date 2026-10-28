@@ -1019,12 +1019,12 @@
     <string name="connection_help_wifi_direct_channel">Bağlantı kurulumunda, Tercih edilen Wi-Fi Direct kanalına dokunup başka bir kanal deneyin veya Otomatik\'i seçin. Ardından tekrar deneyin.</string>
     <string name="hotspot_interface_not_found">Yapılandırılan erişim noktası arayüzü bu ana ünitede bulunamadı</string>
     <string name="iphone_sent_no_picture">iPhone bağlandı ancak görüntü göndermedi</string>
-    <string name="last_connection_attempt">Son bağlantı denemesi: %1</string>
+    <string name="last_connection_attempt">Son bağlantı denemesi (%1$s): %2$s</string>
     <string name="option_size_custom">Özel</string>
     <string name="preview_decoder_hardware">donanımsal</string>
     <string name="preview_decoder_software">yazılımsal</string>
     <string name="preview_list_separator">, </string>
-    <string name="preview_transport_hevc">HEVC</string>
+    <string name="preview_transport_hevc">HEVC (H.265, %1$s)</string>
     <string name="settings_call_at_call_rate">Aramalar kendi örnekleme hızında (deneysel)</string>
     <string name="settings_call_at_call_rate_description">Orijinal CarPlay alıcısının yaptığı gibi, aramaları 48 kHz Opus yerine aramanın kendi hızında (8, 16, 24 veya 32 kHz) PCM olarak sunar. Bir sonraki bağlantıda geçerli olur. Bir aramada ses yoksa bunu kapatın.</string>
     <string name="settings_carplay_same_task">CarPlay\'i başlatıcı kartında tut (deneysel)</string>
@@ -1034,9 +1034,8 @@
     <string name="settings_navigation_prompt_audio_focus">Navigasyon komutları ses odağı istesin</string>
     <string name="settings_navigation_prompt_audio_focus_description">Her CarPlay navigasyon komutu sırasında DiPlay, diğer seslerin kısılmasını sağlayan geçici bir ses odağı talep eder ve komuttan sonra serbest bırakır. Müzik çalana kadar komutlar sessiz kalıyorsa veya komutlar sırasında müziğin kısılması gerekiyorsa bunu deneyin. Ana ünitenin kendi sesi komutlar sırasında kısılabilir veya duraklayabilir. Bir sonraki CarPlay bağlantısında geçerli olur.</string>
     <string name="setup_features_description_unknown">İstediğiniz özellikleri şimdi açın; her şey Ayarlar\'da kalır ve daha sonra değiştirilebilir.</string>
-    <string name="size_option_millimeters">%1 · %2 mm</string>
-    <string name="vpn_authorization_adb_command">Ana üniteye bağlı bir bilgisayardan bu ADB komutunu bir kez çalıştırın, ardından iPhone\'u tekrar takın:
-adb shell appops set %1 ACTIVATE_VPN allow</string>
+    <string name="size_option_millimeters">%1$s · %2$d mm</string>
+    <string name="vpn_authorization_adb_command">Ana üniteye bağlı bir bilgisayardan bu ADB komutunu bir kez çalıştırın, ardından iPhone\'u tekrar takın:\nadb shell appops set %1$s ACTIVATE_VPN allow</string>
     <string name="vpn_authorization_adb_did_not_allow">Bu ana ünite VPN yetkilendirmesini açamıyor ve ADB üzerinden VPN\'e izin vermek işe yaramadı.</string>
     <string name="vpn_authorization_adb_not_approved">Bu ana ünite VPN yetkilendirmesini açamıyor ve ADB\'si DiPlay\'i onaylamadı, bu nedenle DiPlay VPN\'e kendisi izin veremiyor.</string>
     <string name="vpn_authorization_adb_unusable">Bu ana ünite VPN yetkilendirmesini açamıyor ve DiPlay VPN\'e kendisi izin vermek için ağ üzerinden ADB\'sini kullanamıyor.</string>
