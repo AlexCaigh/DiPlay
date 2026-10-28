@@ -161,6 +161,7 @@ class AppLocaleTest {
         assertEquals(AppLocale.TURKISH, AppLocale.preference(context))
         assertEquals("Türkçe", AppLocale.displayName(context, AppLocale.TURKISH))
         assertSame(context, AppLocale.wrap(context))
-    }
+        AppLocale.save(context, AppLocale.SYSTEM)
+        assertTrue(manager.applicationLocales.isEmpty)
     }
 }
