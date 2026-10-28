@@ -25,6 +25,7 @@ Changes through DiPlay 0.2.21 are documented in [0.2.21 release notes](RELEASE-N
 - On head units without a VPN consent screen, the USB CarPlay screen says why DiPlay could not allow its VPN and shows the one ADB command that does ([#1011](https://github.com/shihabal3amri/DiPlay/issues/1011), [#294](https://github.com/shihabal3amri/DiPlay/issues/294)). [#1096](https://github.com/shihabal3amri/DiPlay/pull/1096)
 - When the iPhone opens CarPlay's screen but sends no picture for 10 s, the CarPlay screen says so and suggests restarting the iPhone, which fixed it in [#975](https://github.com/shihabal3amri/DiPlay/issues/975). [#1097](https://github.com/shihabal3amri/DiPlay/pull/1097)
 - A wired attempt whose USB network opens late, 28–30 s after the start request after a **Save and reconnect** ([#335](https://github.com/shihabal3amri/DiPlay/issues/335)), waits up to 45 s so DiPlay's second start request can still go out. [#1057](https://github.com/shihabal3amri/DiPlay/pull/1057)
+- **Existing Wi-Fi / same LAN** can name the network interface that carries the LAN, for head units that reach the router through an interface Android does not report as Wi-Fi, such as a USB network card on `eth1`. Leave it empty for the automatic choice. Tested on a 2022 Seal EV (DiLink 4.0) with a USB network card. Thanks to @wdubaiyu. [#1113](https://github.com/shihabal3amri/DiPlay/pull/1113)
 
 ## Display and touch
 
@@ -35,6 +36,8 @@ Changes through DiPlay 0.2.21 are documented in [0.2.21 release notes](RELEASE-N
 - The quick menu's display summary names the size DiPlay actually requests, and its video and full-screen lines are in the menu's language. [#923](https://github.com/shihabal3amri/DiPlay/pull/923)
 - After the CarPlay screen is recreated during a session, for example by a language change, day/night changes and the Siri and wheel keys reach the iPhone again. [#933](https://github.com/shihabal3amri/DiPlay/pull/933)
 - **Keep CarPlay in the launcher card (experimental)** (**Settings → Advanced**), off by default: for launchers that show DiPlay in a card or picture-in-picture window, such as BYD's DiYou desktop and Dudu desktop, CarPlay opens in DiPlay's own window, as in 0.2.11 and earlier, instead of a separate full-screen one ([#463](https://github.com/shihabal3amri/DiPlay/issues/463), [#406](https://github.com/shihabal3amri/DiPlay/issues/406), [#1003](https://github.com/shihabal3amri/DiPlay/issues/1003)). Pending in-car acceptance. [#1052](https://github.com/shihabal3amri/DiPlay/pull/1052)
+- A drag over a slow connection sends the finger's newest position instead of queueing every old one, so the map follows the finger again once the connection catches up. Presses and releases are never merged. [#1134](https://github.com/shihabal3amri/DiPlay/pull/1134)
+- Touch handling no longer builds a protocol hex dump for every touch event that nobody reads. [#1131](https://github.com/shihabal3amri/DiPlay/pull/1131)
 
 ## Audio, calls and Siri
 
@@ -69,6 +72,9 @@ Changes through DiPlay 0.2.21 are documented in [0.2.21 release notes](RELEASE-N
 - The setup guide no longer says "Suggested for Not sure" when the DiLink version is unknown. [#929](https://github.com/shihabal3amri/DiPlay/pull/929)
 - The settings backup and report pages a phone opens are available in Italian. [#925](https://github.com/shihabal3amri/DiPlay/pull/925)
 - The phone page's address no longer changes when it is reopened right after leaving it. [#932](https://github.com/shihabal3amri/DiPlay/pull/932)
+- DiPlay is available in **Korean** (한국어). Thanks to @boy331990. [#1105](https://github.com/shihabal3amri/DiPlay/pull/1105)
+- An update is downloaded only from `https://github.com/…` with a plain APK file name, and a download over 64 MiB stops. [#1143](https://github.com/shihabal3amri/DiPlay/pull/1143)
+- A settings backup restores only the known picture and car hotspot settings, with the right type, so an edited backup can no longer stop DiPlay from starting. [#1136](https://github.com/shihabal3amri/DiPlay/pull/1136)
 
 ## Navigation
 
@@ -81,3 +87,15 @@ Changes through DiPlay 0.2.21 are documented in [0.2.21 release notes](RELEASE-N
 - A minute that sent the iPhone no wheel speed says what the speed and gear reads returned ([#807](https://github.com/shihabal3amri/DiPlay/issues/807)). [#996](https://github.com/shihabal3amri/DiPlay/pull/996)
 - A media button that CarPlay does not use is listed under Wheel keys, so a car that sends its own code for a key shows it ([#610](https://github.com/shihabal3amri/DiPlay/issues/610)). [#970](https://github.com/shihabal3amri/DiPlay/pull/970)
 - The `Audio: rtp clock` line names the microphone clock for PCM correctly. [#963](https://github.com/shihabal3amri/DiPlay/pull/963)
+- **View report** opens at once even for a full report: it shows the report's head (version, head unit, settings) and its newest part. Saving and sharing still give the full report. [#1132](https://github.com/shihabal3amri/DiPlay/pull/1132)
+- The session log is written on a background thread, so the screen and network threads no longer wait for the disk; under overload the log says how many lines it dropped. [#1133](https://github.com/shihabal3amri/DiPlay/pull/1133)
+- Reports hide the iPhone's USB id in its dashed form too, logcat no longer shows a generated hotspot name, and wired sessions no longer log one line per USB acknowledgement. [#1141](https://github.com/shihabal3amri/DiPlay/pull/1141), [#1139](https://github.com/shihabal3amri/DiPlay/pull/1139), [#1144](https://github.com/shihabal3amri/DiPlay/pull/1144)
+
+## Security and robustness
+
+Thanks to @aloaiza-dev for this series. A normal session behaves as before; the one visible change is the remote MFI rule below.
+
+- What another device on the same network or USB cable sends can no longer make DiPlay buffer or allocate without limit: control requests, iAP packages, Bonjour probe replies, binary plists and USB network blocks are bounded, and a bad one ends only that connection. [#1122](https://github.com/shihabal3amri/DiPlay/pull/1122), [#1125](https://github.com/shihabal3amri/DiPlay/pull/1125), [#1126](https://github.com/shihabal3amri/DiPlay/pull/1126), [#1128](https://github.com/shihabal3amri/DiPlay/pull/1128)
+- Other apps on the head unit can no longer open the settings backup page (which starts a web server), start a connection through DiPlay's Bluetooth wake, answer DiPlay's USB permission request on Android 12 and older, or hold more than four embedded maps. [#1138](https://github.com/shihabal3amri/DiPlay/pull/1138), [#1129](https://github.com/shihabal3amri/DiPlay/pull/1129), [#1140](https://github.com/shihabal3amri/DiPlay/pull/1140)
+- A remote MFI server on a public host must use `https://`; `http://` is accepted only on a private network. An owner with a public `http://` server saved now gets an error instead of connecting. [#1127](https://github.com/shihabal3amri/DiPlay/pull/1127)
+- The ambient light worker refuses a symlinked lock file, the BYD call tool quotes its APK path, and the sample launchers bind only DiPlay's map service. [#1135](https://github.com/shihabal3amri/DiPlay/pull/1135), [#1137](https://github.com/shihabal3amri/DiPlay/pull/1137), [#1142](https://github.com/shihabal3amri/DiPlay/pull/1142)

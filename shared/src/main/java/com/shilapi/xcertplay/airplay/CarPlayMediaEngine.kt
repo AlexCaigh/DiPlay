@@ -640,7 +640,7 @@ class CarPlayMediaEngine(
         } else if (framesPerPacket > 0) {
             Math.round(framesPerPacket * 1000.0 / format.sampleRate).toInt().coerceIn(5, 60)
         } else {
-            20
+            MicrophoneConfig.pcmFrameMillis(format.sampleRate, format.channels)
         }
         val opusBitrate = when {
             formatBits and OPUS_48K != 0L -> 96_000
